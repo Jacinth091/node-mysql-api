@@ -1,0 +1,19 @@
+{
+    "database": {
+        "host": "localhost",
+        "port": 3306,
+        "user": "root",
+        "password": "password123",
+        "database": "node_mysql_api"
+    },
+    "secret": "Idol_kong_ang_ganda_palagi_hehe",
+    "emailFrom": "delilah.rogahn@ethereal.email",
+    "smtpOptions": {
+        "host": "smtp.ethreal.email",
+        "port": 587,
+        "auth": {
+            "user": "delilah.rogahn@ethereal.email",
+            "pass": "s2pWgAXRCPgUyj8tvr"
+        }   
+    }
+}
