@@ -29,7 +29,7 @@ async function authenticate({ email, password, ipAddress }: any) {
     if (!account || !account.isVerified || !(await bcrypt.compare(password, account.passwordHash)))
         throw new Error('Email or Password is incorrect.');
 
-    const jwtToken = generateJwtToken(account);
+    const jwtToken = await generateJwtToken(account);
     const refreshToken = await createRefreshToken(account, ipAddress);
 
     await refreshToken.save();
@@ -45,26 +45,29 @@ async function refreshToken({ token, ipAddress }: any) {
     const refreshToken = await getRefreshToken(token);
     const account = await refreshToken.getAccount();
 
+    // replace old refresh token with a new one and save
     const newRefreshToken = generateRefreshToken(account, ipAddress);
     refreshToken.revoked = Date.now();
-    refreshToken.revokedByIp = ipAddress;
+    refreshToken.revokedBy = ipAddress;
     refreshToken.replacedByToken = newRefreshToken.token;
     await refreshToken.save();
     await newRefreshToken.save();
 
+    // generate new jwt
     const jwtToken = await generateJwtToken(account);
 
+    // return basic details and tokens
     return {
         ...basicDetails(account),
         jwtToken,
         refreshToken: newRefreshToken.token
-    }
+    };
 }
 
 async function revokeToken({ token, ipAddress }: any) {
     const refreshToken = await getRefreshToken(token);
     refreshToken.revoked = Date.now();
-    refreshToken.revokedByIp = ipAddress;
+    refreshToken.revokedBy = ipAddress;
     await refreshToken.save();
 }
 
@@ -139,7 +142,7 @@ async function create(params: any) {
     if (await db.Account.findOne({ where: { email: params.email } })) {
         throw 'Email "' + params.email + '" is already registered.'
     }
-    const account = await db.Account(params);
+    const account = new db.Account(params);
     account.verified = Date.now();
     account.passwordHash = await hash(params.password);
     await account.save();
@@ -193,8 +196,8 @@ function generateRefreshToken(account: any, ipAddress: any) {
     return new db.RefreshToken({
         accountId: account.id,
         token: randomTokenString(),
-        expiresIn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        createdByIp: ipAddress,
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        createdBy: ipAddress,
     })
 };
 
@@ -208,10 +211,10 @@ function basicDetails(account: any) {
 
 async function createRefreshToken(account: any, ipAddress: any) {
     return await db.RefreshToken.create({
-        account: account.id,
+        accountId: account.id,
         token: randomTokenString(),
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        createdByIp: ipAddress
+        createdBy: ipAddress
     });
 }
 
