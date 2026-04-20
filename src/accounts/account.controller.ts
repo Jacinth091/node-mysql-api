@@ -8,15 +8,15 @@ import accountService from './account.service';
 
 router.post('/authenticate', authenticateSchema, authenticate);
 router.post('/refresh-token', refreshToken);
-router.post('/revoke-token', revokeTokenSchema, revokeToken);
+router.post('/revoke-token', authorize(), revokeTokenSchema, revokeToken);
 router.post('/register', registerSchema, register);
 router.post('/verify-email', verifyEmailSchema, verifyEmail);
 router.post('/forgot-password', forgotPasswordSchema, forgotPassword);
 router.post('/validate-reset-token', validateResetTokenSchema, validateResetToken);
 router.post('/reset-password', resetPasswordSchema, resetPassword);
-router.get('/', authorize(), getAll);
+router.get('/', authorize(Role.Admin), getAll);
 router.get('/:id', authorize(), getById);
-router.post('/', authorize(), createSchema, create);
+router.post('/', authorize(Role.Admin), createSchema, create);
 router.put('/:id', authorize(), updateSchema, update);
 router.delete('/:id', authorize(), _delete);
 
@@ -44,9 +44,13 @@ function authenticate(req: any, res: any, next: any) {
 
 }
 
+
 function refreshToken(req: any, res: any, next: any) {
-    const token = req.cookies.refreshToken;
+    const token = (req.body && req.body.token) || req.cookies.refreshToken;
     const ipAddress = req.ip;
+
+    if (!token) return res.status(400).json({ message: "Token is required." });
+
     accountService.refreshToken({ token, ipAddress })
         .then(({ refreshToken, ...account }: any) => {
             setTokenCookie(res, refreshToken);
@@ -57,13 +61,13 @@ function refreshToken(req: any, res: any, next: any) {
 
 function revokeTokenSchema(req: any, res: any, next: any) {
     const schema = Joi.object({
-        token: Joi.string().required()
+        token: Joi.string().empty('')
     })
     validateRequest(req, next, schema);
 }
 
 function revokeToken(req: any, res: any, next: any) {
-    const token = req.body.token || req.cookie.refreshToken;
+    const token = req.body.token || req.cookies.refreshToken;
     const ipAddress = req.ip;
 
     if (!token) return res.status(400).json({ message: "Token is required." });
@@ -71,7 +75,7 @@ function revokeToken(req: any, res: any, next: any) {
     if (!req.auth.ownsToken(token) && req.auth.role !== Role.Admin) return res.status(401).json({ message: "Unauthorized." });
 
     accountService.revokeToken({ token, ipAddress })
-        .then(() => res.json({}))
+        .then(() => res.json({ message: 'Token revoked' }))
         .catch(next);
 }
 
