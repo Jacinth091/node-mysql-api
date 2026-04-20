@@ -7,13 +7,13 @@
         "database": "node_mysql_api"
     },
     "secret": "Idol_kong_ang_ganda_palagi_hehe",
-    "emailFrom": "delilah.rogahn@ethereal.email",
+    "emailFrom": "sophia10@ethereal.email",
     "smtpOptions": {
-        "host": "smtp.ethreal.email",
+        "host": "smtp.ethereal.email",
         "port": 587,
         "auth": {
-            "user": "delilah.rogahn@ethereal.email",
-            "pass": "s2pWgAXRCPgUyj8tvr"
+            "user": "sophia10@ethereal.email",
+            "pass": "KD7rkrexnx88JY87ds"
         }
     }
 }
